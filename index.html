@@ -3594,38 +3594,35 @@
                 if (category === "대상") {
                   currentStudent = targetCellData;
                 } else if (category === "장소" || category === "싸인") {
-                  currentLocation = targetCellData;
-
-                  // 백엔드 JSON 데이터가 있다면 CSV 데이터보다 우선함 (싸인 추출 용도)
-                  if (selectedTeam?.includes('취업')) {
-                    const dKey = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth() + 1).padStart(2, '0')}-${String(currentDisplayDate.getDate()).padStart(2, '0')}`;
-                    const daySigns = rawData.sign[dKey] || {};
-                    const cleanT = currentTime.replace(/\s+/g, '');
-                    const teacherName = currentTeacher.trim();
-                    
-                    // 1. 강사명_시간 조합 키로 우선 검색 (가장 정확)
-                    // 2. 시간 키로 검색 (호환성 유지)
-                    let sEntry = daySigns[`${teacherName}_${currentTime.trim()}`] || 
-                                 daySigns[`${teacherName}_${cleanT}`] ||
-                                 daySigns[currentTime.trim()] || 
-                                 daySigns[cleanT];
-                    
-                    if (!sEntry && cleanT.includes('~')) {
-                      const startTime = cleanT.split('~')[0] + '~';
-                      sEntry = daySigns[`${teacherName}_${startTime}`] || daySigns[startTime];
-                    }
-
-                    if (sEntry && sEntry.location && (sEntry.location.startsWith('http') || sEntry.location.startsWith('data:'))) {
-                      currentLocation = sEntry.location;
-                    }
+                  // 이미지가 아닌 일반 텍스트 장소 정보만 저장
+                  if (!targetCellData.startsWith('http') && !targetCellData.startsWith('data:')) {
+                    currentLocation = targetCellData;
                   }
                 } else if (category.includes("진행")) {
                   currentStatus = targetCellData;
 
+                  // 취업팀 싸인 데이터 매칭 시도 (모든 정보가 취합된 이 시점에 수행)
+                  let finalLoc = currentLocation;
+                  if (selectedTeam?.includes('취업')) {
+                    const dKey = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth() + 1).padStart(2, '0')}-${String(currentDisplayDate.getDate()).padStart(2, '0')}`;
+                    const daySigns = rawData.sign[dKey] || {};
+                    const cleanT = currentTime.replace(/\s+/g, '');
+                    const tName = currentTeacher.trim();
+                    
+                    const sEntry = daySigns[`${tName}_${currentTime.trim()}`] || 
+                                   daySigns[`${tName}_${cleanT}`] ||
+                                   daySigns[currentTime.trim()] || 
+                                   daySigns[cleanT] ||
+                                   (cleanT.includes('~') ? (daySigns[`${tName}_${cleanT.split('~')[0]}~`] || daySigns[cleanT.split('~')[0] + '~']) : null);
+                    
+                    if (sEntry && sEntry.location && (sEntry.location.startsWith('http') || sEntry.location.startsWith('data:'))) {
+                      finalLoc = sEntry.location;
+                    }
+                  }
+
                   const sessionCounts = getStudentCounts(currentStudent, dateColumnIndex, data, headerRowIndex);
 
                   let finalStu = currentStudent;
-                  let finalLoc = currentLocation;
                   let finalStatus = currentStatus;
                   let isSpecialSlot = false;
 
@@ -3634,7 +3631,7 @@
                     const teacherShifts = shifts;
                     if (currentTime === teacherShifts[0]) {
                       finalStu = specialDayInfo.student;
-                      finalLoc = specialDayInfo.location;
+                      if (!finalLoc || !finalLoc.startsWith('http')) finalLoc = specialDayInfo.location;
                       if (specialDayInfo.memo && !finalStatus.includes(specialDayInfo.memo)) {
                         finalStatus = (finalStatus ? finalStatus + ", " : "") + specialDayInfo.memo;
                       }
@@ -3988,8 +3985,8 @@
                                   <td className={`${tdClass} ${studentCellBg}`} style={topBorderStyle}>
                                     <div className={`font-bold text-blue-600 ${dynamicStuSizeClass} leading-[1.1] w-full flex flex-col items-center justify-center`}>
                                       <span className="whitespace-nowrap text-center">{(row.student || "").replace(/\n/g, ' ')}</span>
-                                      {showLocationText && (
-                                        <span className="whitespace-nowrap text-center mt-0.5">({locTextForDisplay})</span>
+                                      {showLocationText && !locTextForDisplay?.startsWith('http') && !locTextForDisplay?.startsWith('data:') && (
+                                        <span className="whitespace-nowrap text-center mt-0.5 font-medium text-gray-500 text-[0.8em]">({locTextForDisplay})</span>
                                       )}
                                     </div>
                                     <div className={`text-[14px] landscape:text-[18px] md:text-[16px] ${statusColorClass} mt-1 whitespace-normal break-words break-keep leading-tight text-center`}>
