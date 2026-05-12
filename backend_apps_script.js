@@ -46,30 +46,8 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify({success: false})).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // [추가] 싸인 데이터 전체 조회 액션
-  if (e.parameter.type === 'getAllSigns') {
-    var scheduleData = getTeacherScheduleAll(team, "__ALL__");
-    var formattedSigns = {};
-    
-    // 앱이 원하는 YYYY-MM-DD -> { "강사명_시간": {location: "..."} } 형식으로 변환
-    for (var dateKey in scheduleData) {
-      formattedSigns[dateKey] = {};
-      for (var timeKey in scheduleData[dateKey]) {
-        var item = scheduleData[dateKey][timeKey];
-        if (item.location) {
-          var teacherKey = "";
-          // getTeacherScheduleAll 결과에서 강사명을 찾기 위한 시트 재탐색 로직 대신 
-          // 현재 데이터 구조에서 유추하거나, 매칭을 위해 강사명을 키에 포함하도록 getTeacherScheduleAll을 활용
-          formattedSigns[dateKey][timeKey] = { location: item.location };
-          
-          // 강사별로 정확히 구분하기 위해 시트 구조를 다시 한번 파싱하여 "강사명_시간" 키 생성
-          // (getTeacherScheduleAll의 결과 구조를 활용)
-        }
-      }
-    }
-    
-    // 더 정확한 매칭을 위해 getTeacherScheduleAll의 결과를 그대로 가공하는 대신
-    // 전용 추출 함수를 사용하여 { date: { "강사_시간": {location: "..." } } } 형태로 반환
+  // [수정] action 또는 type 모두 대응 가능하도록 개선
+  if (action === 'getAllSigns' || e.parameter.type === 'getAllSigns') {
     var finalSigns = getFormattedSignData(team);
     return ContentService.createTextOutput(JSON.stringify(finalSigns)).setMimeType(ContentService.MimeType.JSON);
   }
