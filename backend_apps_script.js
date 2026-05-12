@@ -271,31 +271,25 @@ function formatDate(date) {
   if (!date) return "";
   if (date instanceof Date) {
     if (isNaN(date.getTime())) return "";
-    var month = '' + (date.getMonth() + 1);
-    var day = '' + date.getDate();
     var year = date.getFullYear();
-    if (month.length < 2) month = '0' + month;
-    if (day.length < 2) day = '0' + day;
-    return [year, month, day].join('-');
+    var month = String(date.getMonth() + 1).padStart(2, '0');
+    var day = String(date.getDate()).padStart(2, '0');
+    return year + '-' + month + '-' + day;
   }
   var str = date.toString().trim();
   var match = str.match(/(\d+)\/(\d+)/);
   if (match) {
-    var m = match[1];
-    var d = match[2];
-    if (m.length < 2) m = '0' + m;
-    if (d.length < 2) d = '0' + d;
+    var m = String(match[1]).padStart(2, '0');
+    var d = String(match[2]).padStart(2, '0');
     var year = new Date().getFullYear(); 
     return year + '-' + m + '-' + d;
   }
   var fallbackDate = new Date(str);
   if (!isNaN(fallbackDate.getTime())) {
-    var month = '' + (fallbackDate.getMonth() + 1);
-    var day = '' + fallbackDate.getDate();
     var year = fallbackDate.getFullYear();
-    if (month.length < 2) month = '0' + month;
-    if (day.length < 2) day = '0' + day;
-    return [year, month, day].join('-');
+    var month = String(fallbackDate.getMonth() + 1).padStart(2, '0');
+    var day = String(fallbackDate.getDate()).padStart(2, '0');
+    return year + '-' + month + '-' + day;
   }
   return "";
 }
