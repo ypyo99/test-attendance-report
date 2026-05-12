@@ -3610,74 +3610,91 @@
               } else if (category.includes("진행")) {
                 currentStatus = targetCellData;
 
-                const sessionCounts = getStudentCounts(currentStudent, dateColumnIndex, data, headerRowIndex);
-
-                let finalStu = currentStudent;
-                let finalLoc = currentLocation;
-                let finalStatus = currentStatus;
-                let isSpecialSlot = false;
-
-                // 특이 사항 자동 반영 (선생님별 첫 슬롯)
-                if (specialDayInfo && (!finalStu && !finalLoc || ["김종철", "표영", "강계환"].includes(currentTeacher.trim()))) {
-                  const teacherShifts = shifts;
-                  if (currentTime === teacherShifts[0]) {
-                    finalStu = specialDayInfo.student;
-                    finalLoc = specialDayInfo.location;
-                    if (specialDayInfo.memo && !finalStatus.includes(specialDayInfo.memo)) {
-                      finalStatus = (finalStatus ? finalStatus + ", " : "") + specialDayInfo.memo;
+              const getStudentCounts = (name, maxCol, fullData, hIdx) => {
+                if (!name) return null;
+                const searchNames = name.split(/[/,]/).map(s => s.trim().split('(')[0].trim()).filter(Boolean);
+                let res = [];
+                searchNames.forEach(n => {
+                  let count = 0, dates = [];
+                  for (let col = 4; col <= maxCol; col++) {
+                    const match = fullData[hIdx][col]?.match(/(\d+)\s*[/.]\s*(\d+)/);
+                    if (!match) continue;
+                    const colDate = new Date(new Date().getFullYear(), parseInt(match[1])-1, parseInt(match[2]), 0,0,0,0);
+                    
+                    let attended = false;
+                    let lastStudentInCol = "";
+                    for (let r = hIdx + 1; r < fullData.length; r++) {
+                      const cat = fullData[r][3]?.replace(/\s+/g, '') || "";
+                      const val = fullData[r][col]?.trim() || "";
+                      if (cat === "대상") lastStudentInCol = val;
+                      else if (cat.includes("진행") && lastStudentInCol.includes(n) && /^[1-9]\d*/.test(val)) {
+                        attended = true; break;
+                      }
                     }
-                    isSpecialSlot = true;
+                    if (attended) { count++; dates.push(colDate); }
                   }
-                }
-
-                parsedData.push({
-                  group: currentGroup,
-                  teacher: currentTeacher,
-                  time: currentTime,
-                  student: finalStu,
-                  status: finalStatus,
-                  location: finalLoc,
-                  sessionCounts: sessionCounts,
-                  isSpecial: isSpecialSlot
+                  if (count > 0) res.push({ name: n, count, dates });
                 });
+                return res.length > 0 ? res : null;
+              };
 
-                currentStudent = "";
-                currentLocation = "";
-                currentStatus = "";
-              }
-            }
+              let currentGroup = "", currentTeacher = "", currentTime = "", currentStudent = "", currentLocation = "", currentStatus = "", parsedData = [];
+              console.log("일정 데이터 추출 시작...");
+              for (let i = headerRowIndex + 1; i < data.length; i++) {
+                const row = data[i]; if (!row || row.length < 4) continue;
+                if (row[0]?.trim()) currentGroup = row[0].trim();
+                if (row[1]?.trim()) currentTeacher = row[1].trim();
+                if (row[2]?.trim()) currentTime = row[2].trim();
+                const cat = row[3]?.replace(/\s+/g, '') || "";
+                const val = row[dateColumnIndex]?.trim() || "";
 
-            for (let i = 0; i < parsedData.length; i++) {
-              parsedData[i].rowspan = { group: 1, teacher: 1, time: 1 };
-              parsedData[i].render = { group: true, teacher: true, time: true };
-            }
-
-            const colsToMerge = ['group', 'teacher', 'time'];
-            for (let c = 0; c < colsToMerge.length; c++) {
-              const col = colsToMerge[c];
-              let startRow = 0;
-              while (startRow < parsedData.length) {
-                let count = 1;
-                for (let nextRow = startRow + 1; nextRow < parsedData.length; nextRow++) {
-                  let sameAsParent = true;
-                  for (let p = 0; p < c; p++) {
-                    if (parsedData[startRow][colsToMerge[p]] !== parsedData[nextRow][colsToMerge[p]]) {
-                      sameAsParent = false;
-                      break;
-                    }
+                if (cat === "대상") {
+                  currentStudent = val;
+                } else if (cat === "장소" || cat === "싸인") {
+                  currentLocation = val;
+                  if (selectedTeam?.includes('취업')) {
+                    const dKey = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth()+1).padStart(2,'0')}-${String(currentDisplayDate.getDate()).padStart(2,'0')}`;
+                    const jsonLoc = rawData.sign[dKey]?.[currentTime.trim()]?.location || rawData.sign[dKey]?.[currentTime.split('~')[0]+'~']?.location;
+                    if (jsonLoc?.startsWith('http') || jsonLoc?.startsWith('data:')) currentLocation = jsonLoc;
                   }
-                  if (sameAsParent && parsedData[startRow][col] === parsedData[nextRow][col]) {
-                    count++;
-                    parsedData[nextRow].render[col] = false;
-                  } else {
-                    break;
+                } else if (cat.includes("진행")) {
+                  currentStatus = val;
+                  if (currentTeacher || currentGroup || currentTime) {
+                    parsedData.push({
+                      group: currentGroup, teacher: currentTeacher, time: currentTime,
+                      student: currentStudent, status: currentStatus, location: currentLocation,
+                      sessionCounts: getStudentCounts(currentStudent, dateColumnIndex, data, headerRowIndex)
+                    });
                   }
+                  currentStudent = ""; currentLocation = ""; currentStatus = "";
                 }
-                parsedData[startRow].rowspan[col] = count;
-                startRow += count;
               }
-            }
 
+              console.log(`추출 완료: ${parsedData.length}개 행`);
+
+              for (let i = 0; i < parsedData.length; i++) {
+                parsedData[i].rowspan = { group: 1, teacher: 1, time: 1 };
+                parsedData[i].render = { group: true, teacher: true, time: true };
+              }
+              const colsToMerge = ['group', 'teacher', 'time'];
+              for (let c = 0; c < colsToMerge.length; c++) {
+                const col = colsToMerge[c];
+                let startRow = 0;
+                while (startRow < parsedData.length) {
+                  let count = 1;
+                  for (let nextRow = startRow + 1; nextRow < parsedData.length; nextRow++) {
+                    let sameAsParent = true;
+                    for (let p = 0; p < c; p++) {
+                      if (parsedData[startRow][colsToMerge[p]] !== parsedData[nextRow][colsToMerge[p]]) { sameAsParent = false; break; }
+                    }
+                    if (sameAsParent && parsedData[startRow][col] === parsedData[nextRow][col]) {
+                      count++; parsedData[nextRow].render[col] = false;
+                    } else break;
+                  }
+                  parsedData[startRow].rowspan[col] = count;
+                  startRow += count;
+                }
+              }
               setScheduleData(parsedData);
             } catch (e) {
               console.error("데이터 파싱 중 에러 발생:", e);
