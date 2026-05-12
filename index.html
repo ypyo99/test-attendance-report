@@ -3594,15 +3594,17 @@
                 if (category === "대상") {
                   currentStudent = targetCellData;
                 } else if (category === "장소" || category === "싸인") {
-                  // 이미지가 아닌 일반 텍스트 장소 정보만 저장
-                  if (!targetCellData.startsWith('http') && !targetCellData.startsWith('data:')) {
+                  // 장소 칸이 비어있지 않고 이미지가 아닐 때만 텍스트 장소로 저장
+                  if (targetCellData && !targetCellData.startsWith('http') && !targetCellData.startsWith('data:')) {
                     currentLocation = targetCellData;
                   }
                 } else if (category.includes("진행")) {
                   currentStatus = targetCellData;
 
-                  // 취업팀 싸인 데이터 매칭 시도 (모든 정보가 취합된 이 시점에 수행)
+                  // 1. 기본 장소 정보 설정
                   let finalLoc = currentLocation;
+
+                  // 2. 취업팀인 경우 백엔드에서 싸인 이미지 매칭 (최우선순위)
                   if (selectedTeam?.includes('취업')) {
                     const dKey = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth() + 1).padStart(2, '0')}-${String(currentDisplayDate.getDate()).padStart(2, '0')}`;
                     const daySigns = rawData.sign[dKey] || {};
