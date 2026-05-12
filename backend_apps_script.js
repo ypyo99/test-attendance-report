@@ -75,7 +75,9 @@ function getTeacherList(team) {
 function getTeacherScheduleAll(team, teacherName) {
   var sheet = getSheetByTeamName(team);
   if (!sheet) return {};
-  var data = sheet.getDataRange().getValues();
+  var range = sheet.getDataRange();
+  var data = range.getValues();
+  var formulas = range.getFormulas(); // 공식도 함께 가져옴
   var schedule = {};
   var dates = data[1]; 
   var currentTeacher = ""; 
@@ -90,9 +92,22 @@ function getTeacherScheduleAll(team, teacherName) {
           var dateStr = formatDate(dates[col]);
           if (!dateStr) continue;
           if (!schedule[dateStr]) schedule[dateStr] = {};
+          
           var studentRaw = data[i][col];
           var locationRaw = data[i+1][col];
           var statusRaw = data[i+2][col];
+
+          // 취업팀의 경우, locationRaw가 비어있어도 IMAGE 공식이 있으면 URL 추출
+          if (team.indexOf("취업팀") !== -1 && (!locationRaw || locationRaw === "")) {
+            var formula = formulas[i+1][col];
+            if (formula && formula.indexOf("IMAGE") !== -1) {
+              var match = formula.match(/IMAGE\("([^"]+)"/i);
+              if (match && match[1]) {
+                locationRaw = match[1];
+              }
+            }
+          }
+
           schedule[dateStr][shiftTime] = {
             student: (studentRaw == null || studentRaw === "") ? "" : studentRaw.toString().trim(),
             location: (locationRaw == null || locationRaw === "") ? "" : locationRaw.toString().trim(),
@@ -454,7 +469,11 @@ function handleSignatureUpload(p) {
 
           // 데이터 저장
           studentCell.setValue(p.student);
-          signatureCell.setValue(imageUrl);
+          if (imageUrl) {
+            signatureCell.setFormula('=IMAGE("' + imageUrl + '", 1)');
+          } else {
+            signatureCell.setValue("");
+          }
           
           statusCell.setNumberFormat("@");
           statusCell.setValue(p.status);
