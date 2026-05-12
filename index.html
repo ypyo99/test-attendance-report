@@ -3570,7 +3570,7 @@
 
             // 취업팀 전체 싸인 데이터를 가져오는 로직 (DailyScheduleApp 내부)
             let allTeamSignData = {};
-            if (selectedTeam.includes('취업')) {
+            if (selectedTeam?.includes('취업')) {
               try {
                 const teamDataRes = await fetch(`${GOOGLE_SCRIPT_URL}?action=getScheduleAll&team=${selectedTeam}&teacher=__ALL__&t=${Date.now()}`);
                 if (teamDataRes.ok) {
@@ -3596,7 +3596,7 @@
                 currentLocation = targetCellData;
 
                 // 백엔드 JSON 데이터가 있다면 CSV 데이터보다 우선함 (싸인 추출 용도)
-                if (selectedTeam.includes('취업')) {
+                if (selectedTeam?.includes('취업')) {
                   const dateKey = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth() + 1).padStart(2, '0')}-${String(currentDisplayDate.getDate()).padStart(2, '0')}`;
                   const shiftKey = currentTime.trim();
                   if (allTeamSignData[dateKey] && allTeamSignData[dateKey][shiftKey]) {
