@@ -3594,31 +3594,33 @@
                 if (category === "대상") {
                   currentStudent = targetCellData;
                 } else if (category === "장소" || category === "싸인") {
-                  // 장소 칸이 비어있지 않고 이미지가 아닐 때만 텍스트 장소로 저장
+                  // 일반 텍스트 장소 정보 저장 (이미지 주소가 아닐 때만)
                   if (targetCellData && !targetCellData.startsWith('http') && !targetCellData.startsWith('data:')) {
                     currentLocation = targetCellData;
                   }
                 } else if (category.includes("진행")) {
                   currentStatus = targetCellData;
 
-                  // 1. 기본 장소 정보 설정
+                  // '근무기록 입력' 화면과 동일한 싸인 매칭 로직 적용
                   let finalLoc = currentLocation;
-
-                  // 2. 취업팀인 경우 백엔드에서 싸인 이미지 매칭 (최우선순위)
                   if (selectedTeam?.includes('취업')) {
-                    const dKey = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth() + 1).padStart(2, '0')}-${String(currentDisplayDate.getDate()).padStart(2, '0')}`;
-                    const daySigns = rawData.sign[dKey] || {};
-                    const cleanT = currentTime.replace(/\s+/g, '');
+                    const dateStr = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth() + 1).padStart(2, '0')}-${String(currentDisplayDate.getDate()).padStart(2, '0')}`;
+                    const daySigns = rawData.sign[dateStr] || {};
+                    
+                    // 강사명_시간 조합 키 생성 (근무기록 입력 화면과 동일한 방식)
                     const tName = currentTeacher.trim();
+                    const tTime = currentTime.trim();
+                    const cleanT = tTime.replace(/\s+/g, '');
                     
-                    const sEntry = daySigns[`${tName}_${currentTime.trim()}`] || 
-                                   daySigns[`${tName}_${cleanT}`] ||
-                                   daySigns[currentTime.trim()] || 
-                                   daySigns[cleanT] ||
-                                   (cleanT.includes('~') ? (daySigns[`${tName}_${cleanT.split('~')[0]}~`] || daySigns[cleanT.split('~')[0] + '~']) : null);
-                    
-                    if (sEntry && sEntry.location && (sEntry.location.startsWith('http') || sEntry.location.startsWith('data:'))) {
-                      finalLoc = sEntry.location;
+                    // 여러 가지 가능한 키 조합으로 검색
+                    const signEntry = daySigns[`${tName}_${tTime}`] || 
+                                     daySigns[`${tName}_${cleanT}`] || 
+                                     daySigns[tTime] || 
+                                     daySigns[cleanT] ||
+                                     (cleanT.includes('~') ? daySigns[`${tName}_${cleanT.split('~')[0]}~`] : null);
+
+                    if (signEntry && signEntry.location && (signEntry.location.startsWith('http') || signEntry.location.startsWith('data:'))) {
+                      finalLoc = signEntry.location;
                     }
                   }
 
@@ -3628,7 +3630,7 @@
                   let finalStatus = currentStatus;
                   let isSpecialSlot = false;
 
-                  // 특이 사항 자동 반영 (선생님별 첫 슬롯)
+                  // 특이 사항 자동 반영
                   if (specialDayInfo && (!finalStu && !finalLoc || ["김종철", "표영", "강계환"].includes(currentTeacher.trim()))) {
                     const teacherShifts = shifts;
                     if (currentTime === teacherShifts[0]) {
