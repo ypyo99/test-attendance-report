@@ -101,7 +101,7 @@ function getTeacherScheduleAll(team, teacherName) {
           if (team.indexOf("취업팀") !== -1 && (!locationRaw || locationRaw === "")) {
             var formula = formulas[i+1][col];
             if (formula && formula.indexOf("IMAGE") !== -1) {
-              var match = formula.match(/IMAGE\("([^"]+)"/i);
+              var match = formula.match(/IMAGE\("([^"]+)"/i) || formula.match(/IMAGE\('([^']+)'/i);
               if (match && match[1]) {
                 locationRaw = match[1];
               }

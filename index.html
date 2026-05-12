@@ -3964,14 +3964,14 @@
                                     </div>
                                     {(selectedTeam.trim() === '취업팀' || selectedTeam.trim().toLowerCase().includes('취업')) ? (
                                       row.location && (row.location.startsWith('http') || row.location.startsWith('//') || row.location.startsWith('data:') || row.location.includes('drive.google.com')) && (
-                                        <div className="mt-1 flex justify-center">
-                                          <div className="bg-gray-200 rounded p-0.5 border border-gray-300 shadow-sm overflow-hidden">
+                                        <div className="mt-2 flex justify-center">
+                                          <div className="bg-white rounded-lg p-1 border border-blue-100 shadow-md overflow-hidden">
                                             <img
                                               src={getDirectImageUrl(row.location)}
                                               alt="Sign"
-                                              className="h-10 sm:h-12 w-auto object-contain min-w-[40px] mix-blend-multiply"
+                                              className="h-16 sm:h-20 w-auto object-contain min-w-[60px] mix-blend-multiply transition-transform hover:scale-110"
                                               onError={(e) => {
-                                                e.target.closest('div').style.display = 'none';
+                                                e.target.closest('div').parentElement.style.display = 'none';
                                               }}
                                             />
                                           </div>
