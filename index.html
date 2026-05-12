@@ -3275,10 +3275,16 @@
           let signData = {};
           if (teamName.includes('취업')) {
             try {
-              // 이미지 추출 전용 API(getAllSigns) 호출로 변경
-              const sRes = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllSigns&team=${encodeURIComponent(teamName)}&t=${Date.now()}`);
+              // CORS 및 리다이렉션 문제를 방지하기 위해 옵션 강화
+              const sRes = await fetch(`${GOOGLE_SCRIPT_URL}?action=getAllSigns&team=${encodeURIComponent(teamName)}&cache=${Date.now()}`, {
+                method: 'GET',
+                redirect: 'follow'
+              });
               if (sRes.ok) signData = await sRes.json();
-            } catch (e) { console.warn("싸인 데이터 로드 실패(무시됨):", e); }
+            } catch (e) { 
+              console.warn("싸인 데이터 로드 중 통신 오류(CORS 등):", e); 
+              setNotice("⚠️ 싸인 데이터를 불러오는 중 보안 정책(CORS) 문제가 발생했습니다.");
+            }
           }
 
           setRawData({ csv: csvText, sign: signData });

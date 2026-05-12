@@ -14,42 +14,55 @@ function onOpen() {
 }
 
 function doGet(e) {
-  var action = e.parameter.action;
-  var team = e.parameter.team;
-  var teacher = e.parameter.teacher;
-  
-  if (action === 'getTeachers') {
-    return ContentService.createTextOutput(JSON.stringify({
-      teachers: getTeacherList(team)
-    })).setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  if (action === 'getScheduleAll') {
-    return ContentService.createTextOutput(JSON.stringify(
-      getTeacherScheduleAll(team, teacher)
-    )).setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  if (action === 'saveLog') {
-    var result = saveLog(e.parameter);
-    return ContentService.createTextOutput(JSON.stringify(result))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  // 새로 추가된 부분: 웹앱에서 모든 데이터 저장이 끝난 후 딱 한 번만 테두리/색칠을 실행하는 신호
-  if (action === 'runFormat') {
-    var sheet = getSheetByTeamName(team);
-    if (sheet) {
-      runScheduleManagement(sheet.getParent());
-      return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+  try {
+    var action = e.parameter.action;
+    var team = e.parameter.team;
+    var teacher = e.parameter.teacher;
+    
+    if (action === 'getTeachers') {
+      return ContentService.createTextOutput(JSON.stringify({
+        teachers: getTeacherList(team)
+      })).setMimeType(ContentService.MimeType.JSON);
     }
-    return ContentService.createTextOutput(JSON.stringify({success: false})).setMimeType(ContentService.MimeType.JSON);
-  }
+    
+    if (action === 'getScheduleAll') {
+      return ContentService.createTextOutput(JSON.stringify(
+        getTeacherScheduleAll(team, teacher)
+      )).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (action === 'saveLog') {
+      var result = saveLog(e.parameter);
+      return ContentService.createTextOutput(JSON.stringify(result))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    // 새로 추가된 부분: 웹앱에서 모든 데이터 저장이 끝난 후 딱 한 번만 테두리/색칠을 실행하는 신호
+    if (action === 'runFormat') {
+      var sheet = getSheetByTeamName(team);
+      if (sheet) {
+        runScheduleManagement(sheet.getParent());
+        return ContentService.createTextOutput(JSON.stringify({success: true})).setMimeType(ContentService.MimeType.JSON);
+      }
+      return ContentService.createTextOutput(JSON.stringify({success: false})).setMimeType(ContentService.MimeType.JSON);
+    }
 
-  // [수정] action 또는 type 모두 대응 가능하도록 개선
-  if (action === 'getAllSigns' || e.parameter.type === 'getAllSigns') {
-    var finalSigns = getFormattedSignData(team);
-    return ContentService.createTextOutput(JSON.stringify(finalSigns)).setMimeType(ContentService.MimeType.JSON);
+    // [수정] action 또는 type 모두 대응 가능하도록 개선
+    if (action === 'getAllSigns' || e.parameter.type === 'getAllSigns') {
+      var finalSigns = getFormattedSignData(team);
+      return ContentService.createTextOutput(JSON.stringify(finalSigns)).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ success: false, message: "알 수 없는 액션입니다: " + action }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (err) {
+    // 에러 발생 시에도 JSON으로 반환하여 CORS 차단을 방지
+    return ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      error: err.toString(),
+      message: "백엔드 실행 중 오류가 발생했습니다."
+    })).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
