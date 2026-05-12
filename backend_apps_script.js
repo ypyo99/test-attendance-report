@@ -85,7 +85,7 @@ function getTeacherScheduleAll(team, teacherName) {
     if (data[i][1] && data[i][1].toString().trim() !== "") {
       currentTeacher = data[i][1].toString().trim();
     }
-    if (currentTeacher === teacherName.trim()) {
+    if (teacherName === "__ALL__" || currentTeacher === teacherName.trim()) {
       var shiftTime = data[i][2] ? data[i][2].toString().trim() : ""; 
       if (shiftTime !== "") {
         for (var col = 4; col < dates.length; col++) { 

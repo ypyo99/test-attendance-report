@@ -177,7 +177,7 @@
       return url;
     };
 
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKtI6-QMWVwYME6cz5dHFsVmhenKdS3u1RU5JicdneiLpyKxEeCFtzQijOJ4VoWEDgVg/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIJmt-jT7EzvfoTctYuLaOhHIwFPYDIwIYYdp7vOwkiNUvogR6mZXTXWGZNhc_0_Zg0A/exec";
 
     const User = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>;
     const MainCalendarIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>;
@@ -3567,13 +3567,16 @@
               return results.length > 0 ? results : null;
             };
 
-            let currentGroup = "";
-            let currentTeacher = "";
-            let currentTime = "";
-            let currentStudent = "";
-            let currentStatus = "";
-            let currentLocation = "";
-            let parsedData = [];
+            // 취업팀 전체 싸인 데이터를 가져오는 로직 (DailyScheduleApp 내부)
+            let allTeamSignData = {};
+            if (selectedTeam.includes('취업')) {
+              try {
+                const teamDataRes = await fetch(`${GOOGLE_SCRIPT_URL}?action=getScheduleAll&team=${selectedTeam}&teacher=__ALL__&t=${Date.now()}`);
+                if (teamDataRes.ok) {
+                  allTeamSignData = await teamDataRes.json();
+                }
+              } catch (e) { console.error("팀 전체 데이터 로드 실패:", e); }
+            }
 
             for (let i = headerRowIndex + 1; i < data.length; i++) {
               const row = data[i];
@@ -3590,6 +3593,18 @@
                 currentStudent = targetCellData;
               } else if (category === "장소" || category === "싸인") {
                 currentLocation = targetCellData;
+                
+                // 백엔드 JSON 데이터가 있다면 CSV 데이터보다 우선함 (싸인 추출 용도)
+                if (selectedTeam.includes('취업')) {
+                  const dateKey = formatDate(currentDisplayDate);
+                  const shiftKey = currentTime.trim();
+                  if (allTeamSignData[dateKey] && allTeamSignData[dateKey][shiftKey]) {
+                    const jsonLoc = allTeamSignData[dateKey][shiftKey].location;
+                    if (jsonLoc && (jsonLoc.startsWith('http') || jsonLoc.startsWith('data:'))) {
+                      currentLocation = jsonLoc;
+                    }
+                  }
+                }
               } else if (category.includes("진행")) {
                 currentStatus = targetCellData;
 
