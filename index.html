@@ -3256,25 +3256,35 @@
         touchStartY.current = null;
       };
 
-      const fetchTeamData = useCallback((teamName) => {
+      const [allTeamSignData, setAllTeamSignData] = useState({});
+
+      const fetchTeamData = useCallback(async (teamName) => {
         setIsLoading(true);
         setScheduleData([]);
         setNotice("");
+        setAllTeamSignData({});
 
-        const exportUrl = SHEET_URLS[teamName] ? SHEET_URLS[teamName].replace(/\/edit.*gid=(\d+).*/, '/export?format=csv&gid=$1') : "";
+        try {
+          const exportUrl = SHEET_URLS[teamName] ? SHEET_URLS[teamName].replace(/\/edit.*gid=(\d+).*/, '/export?format=csv&gid=$1') : "";
+          
+          // 1. CSV 데이터 가져오기
+          const csvPromise = fetch(`${exportUrl}&t=${Date.now()}`).then(r => r.text());
+          
+          // 2. 취업팀인 경우 싸인 데이터 미리 가져오기
+          let signPromise = Promise.resolve({});
+          if (teamName?.includes('취업')) {
+            signPromise = fetch(`${GOOGLE_SCRIPT_URL}?action=getScheduleAll&team=${teamName}&teacher=__ALL__&t=${Date.now()}`)
+              .then(r => r.ok ? r.json() : {})
+              .catch(() => ({}));
+          }
 
-        fetch(`${exportUrl}&t=${Date.now()}`)
-          .then(response => {
-            if (!response.ok) throw new Error('⚠️ 네트워크 응답에 문제가 있습니다.');
-            return response.text();
-          })
-          .then(csvText => {
-            setGlobalCsvText(csvText);
-          })
-          .catch(error => {
-            alert(`⚠️ [${teamName}] 데이터를 불러오는데 실패했습니다. 시트 권한을 확인해주세요!\n상세 에러: ` + error.message);
-            setIsLoading(false);
-          });
+          const [csvText, signData] = await Promise.all([csvPromise, signPromise]);
+          setAllTeamSignData(signData);
+          setGlobalCsvText(csvText);
+        } catch (error) {
+          alert(`⚠️ [${teamName}] 데이터를 불러오는데 실패했습니다.\n에러: ` + error.message);
+          setIsLoading(false);
+        }
       }, []);
 
       useEffect(() => {
@@ -3287,7 +3297,7 @@
         window.Papa.parse(globalCsvText, {
           header: false,
           skipEmptyLines: true,
-          complete: async function (results) {
+          complete: function (results) {
             try {
               const data = results.data;
 
@@ -3568,18 +3578,8 @@
               return results.length > 0 ? results : null;
             };
 
-            // 취업팀 전체 싸인 데이터를 가져오는 로직 (DailyScheduleApp 내부)
-            let allTeamSignData = {};
-            if (selectedTeam?.includes('취업')) {
-              try {
-                const teamDataRes = await fetch(`${GOOGLE_SCRIPT_URL}?action=getScheduleAll&team=${selectedTeam}&teacher=__ALL__&t=${Date.now()}`);
-                if (teamDataRes.ok) {
-                  allTeamSignData = await teamDataRes.json();
-                }
-              } catch (e) { console.error("팀 전체 데이터 로드 실패:", e); }
-            }
-
-            for (let i = headerRowIndex + 1; i < data.length; i++) {
+              // 이미 fetchTeamData에서 수집된 allTeamSignData를 사용하여 파싱 진행
+              for (let i = headerRowIndex + 1; i < data.length; i++) {
               const row = data[i];
               if (!row || row.length < 4) continue;
 
@@ -3686,7 +3686,7 @@
             }
           }
         });
-      }, [globalCsvText, currentDisplayDate, selectedTeam]);
+      }, [globalCsvText, currentDisplayDate, selectedTeam, allTeamSignData]);
 
       const handleDateChange = (daysToAdd) => {
         if (availableDates.length > 0) {
