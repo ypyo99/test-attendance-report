@@ -269,13 +269,14 @@ function saveLog(p) {
 
 function formatDate(date) {
   if (!date) return "";
+  var timeZone = Session.getScriptTimeZone();
+  
   if (date instanceof Date) {
     if (isNaN(date.getTime())) return "";
-    var year = date.getFullYear();
-    var month = String(date.getMonth() + 1).padStart(2, '0');
-    var day = String(date.getDate()).padStart(2, '0');
-    return year + '-' + month + '-' + day;
+    // 타임존 오차를 방지하기 위해 Utilities.formatDate 사용
+    return Utilities.formatDate(date, timeZone, "yyyy-MM-dd");
   }
+  
   var str = date.toString().trim();
   var match = str.match(/(\d+)\/(\d+)/);
   if (match) {
@@ -284,12 +285,10 @@ function formatDate(date) {
     var year = new Date().getFullYear(); 
     return year + '-' + m + '-' + d;
   }
+  
   var fallbackDate = new Date(str);
   if (!isNaN(fallbackDate.getTime())) {
-    var year = fallbackDate.getFullYear();
-    var month = String(fallbackDate.getMonth() + 1).padStart(2, '0');
-    var day = String(fallbackDate.getDate()).padStart(2, '0');
-    return year + '-' + month + '-' + day;
+    return Utilities.formatDate(fallbackDate, timeZone, "yyyy-MM-dd");
   }
   return "";
 }
