@@ -98,10 +98,11 @@ function getTeacherScheduleAll(team, teacherName) {
           var statusRaw = data[i+2][col];
 
           // 취업팀의 경우, locationRaw가 비어있어도 IMAGE 공식이 있으면 URL 추출
-          if (team.indexOf("취업팀") !== -1 && (!locationRaw || locationRaw === "")) {
+          if (team.indexOf("취업팀") !== -1) {
             var formula = formulas[i+1][col];
-            if (formula && formula.indexOf("IMAGE") !== -1) {
-              var match = formula.match(/IMAGE\("([^"]+)"/i) || formula.match(/IMAGE\('([^']+)'/i);
+            if (formula && formula.toUpperCase().indexOf("IMAGE") !== -1) {
+              // 대소문자, 공백, 따옴표 유연하게 대응하는 정규식
+              var match = formula.match(/IMAGE\s*\(\s*["']([^"']+)["']/i);
               if (match && match[1]) {
                 locationRaw = match[1];
               }
