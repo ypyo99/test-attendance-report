@@ -4522,7 +4522,7 @@
       const [cachedCsv, setCachedCsv] = useState("");
 
       const weekDays = ['월', '화', '수', '목', '금'];
-      const timeSlots = ["9:30~10:30", "10:30~11:30", "11:30~12:30", "13:00~14:00", "14:00~15:00", "15:00~16:00"];
+      const [timeSlots, setTimeSlots] = useState(["9:30~10:30", "10:30~11:30", "11:30~12:30", "13:00~14:00", "14:00~15:00", "15:00~16:00"]);
 
       const getCurrentWeekDays = useCallback(() => {
         const days = [];
@@ -4618,7 +4618,25 @@
             }
 
             const parsedData = {};
-            timeSlots.forEach(slot => { parsedData[slot] = {}; });
+            // 해당 선생님의 실제 시간대만 추출
+            const extractedSlots = new Set();
+            let tTeacher = "";
+            let tTime = "";
+            for (let i = headerRowIdx + 1; i < data.length; i++) {
+              if (data[i][1] && data[i][1].trim()) tTeacher = data[i][1].trim();
+              if (data[i][2] && data[i][2].trim()) tTime = data[i][2].trim();
+              if (tTeacher === teacher && tTime) extractedSlots.add(tTime);
+            }
+            const sortedSlots = Array.from(extractedSlots).sort((a, b) => {
+              const getT = (s) => {
+                const m = s.match(/(\d+):(\d+)/);
+                return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : 9999;
+              };
+              return getT(a) - getT(b);
+            });
+            const finalSlots = sortedSlots.length > 0 ? sortedSlots : ["9:30~10:30", "10:30~11:30", "11:30~12:30"];
+            finalSlots.forEach(slot => { parsedData[slot] = {}; });
+            setTimeSlots(finalSlots);
 
             if (headerRowIdx === -1) {
               setScheduleData(parsedData);
