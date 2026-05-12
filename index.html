@@ -3595,30 +3595,40 @@
                 if (category === "대상") {
                   currentStudent = targetCellData;
                 } else if (category === "장소" || category === "싸인") {
-                  // 일반 텍스트 장소 정보 저장 (이미지 주소가 아닐 때만)
                   if (targetCellData && !targetCellData.startsWith('http') && !targetCellData.startsWith('data:')) {
                     currentLocation = targetCellData;
                   }
                 } else if (category.includes("진행")) {
                   currentStatus = targetCellData;
 
-                  // '근무기록 입력' 화면과 동일한 싸인 매칭 로직 적용
                   let finalLoc = currentLocation;
                   if (selectedTeam?.includes('취업')) {
-                    const dateStr = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth() + 1).padStart(2, '0')}-${String(currentDisplayDate.getDate()).padStart(2, '0')}`;
-                    const daySigns = rawData.sign[dateStr] || {};
+                    // 날짜 키 생성 (YYYY-MM-DD 포맷 고정)
+                    const y = currentDisplayDate.getFullYear();
+                    const m = String(currentDisplayDate.getMonth() + 1).padStart(2, '0');
+                    const d = String(currentDisplayDate.getDate()).padStart(2, '0');
+                    const dateKey = `${y}-${m}-${d}`;
+                    const daySigns = rawData.sign[dateKey] || {};
                     
-                    // 강사명_시간 조합 키 생성 (근무기록 입력 화면과 동일한 방식)
                     const tName = currentTeacher.trim();
                     const tTime = currentTime.trim();
                     const cleanT = tTime.replace(/\s+/g, '');
                     
-                    // 여러 가지 가능한 키 조합으로 검색
-                    const signEntry = daySigns[`${tName}_${tTime}`] || 
-                                     daySigns[`${tName}_${cleanT}`] || 
-                                     daySigns[tTime] || 
-                                     daySigns[cleanT] ||
-                                     (cleanT.includes('~') ? daySigns[`${tName}_${cleanT.split('~')[0]}~`] : null);
+                    // 1. 정확한 매칭 및 정규화 매칭
+                    let signEntry = daySigns[`${tName}_${tTime}`] || daySigns[`${tName}_${cleanT}`];
+                    
+                    // 2. 부분 매칭 (시간의 앞부분만 일치해도 검색)
+                    if (!signEntry) {
+                      const timePrefix = tTime.split('~')[0].trim();
+                      const possibleKeys = Object.keys(daySigns);
+                      const bestKey = possibleKeys.find(k => k.startsWith(`${tName}_${timePrefix}`) || k.includes(`${tName}`) && k.includes(timePrefix));
+                      if (bestKey) signEntry = daySigns[bestKey];
+                    }
+                    
+                    // 3. 최후의 수단: 강사명 없이 시간만으로 매칭
+                    if (!signEntry) {
+                      signEntry = daySigns[tTime] || daySigns[cleanT];
+                    }
 
                     if (signEntry && signEntry.location && (signEntry.location.startsWith('http') || signEntry.location.startsWith('data:'))) {
                       finalLoc = signEntry.location;
@@ -3631,7 +3641,6 @@
                   let finalStatus = currentStatus;
                   let isSpecialSlot = false;
 
-                  // 특이 사항 자동 반영
                   if (specialDayInfo && (!finalStu && !finalLoc || ["김종철", "표영", "강계환"].includes(currentTeacher.trim()))) {
                     const teacherShifts = shifts;
                     if (currentTime === teacherShifts[0]) {
