@@ -3579,6 +3579,7 @@
             };
 
               // 이미 fetchTeamData에서 수집된 allTeamSignData를 사용하여 파싱 진행
+              let currentGroup = "", currentTeacher = "", currentTime = "", currentStudent = "", currentLocation = "", currentStatus = "", parsedData = [];
               for (let i = headerRowIndex + 1; i < data.length; i++) {
               const row = data[i];
               if (!row || row.length < 4) continue;
