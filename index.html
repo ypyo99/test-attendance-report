@@ -3866,7 +3866,8 @@
                               }
 
                               const locTextForDisplay = row.location ? row.location.trim() : "";
-                              const showLocationText = locTextForDisplay && locTextForDisplay !== "복지관" && !(row.student || "").includes("보조강사") && selectedTeam !== '취업팀';
+                              const isLocationUrl = locTextForDisplay && (locTextForDisplay.startsWith('http') || locTextForDisplay.startsWith('//') || locTextForDisplay.startsWith('data:') || locTextForDisplay.includes('drive.google.com'));
+                              const showLocationText = locTextForDisplay && locTextForDisplay !== "복지관" && !(row.student || "").includes("보조강사") && selectedTeam !== '취업팀' && !isLocationUrl;
 
                               const hasKiosk = ((row.student || "") + (locTextForDisplay)).includes("키오스크");
                               const stuLen = (row.student || "").length;
