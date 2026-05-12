@@ -3256,33 +3256,33 @@
         touchStartY.current = null;
       };
 
-      const [allTeamSignData, setAllTeamSignData] = useState({});
+      const [rawData, setRawData] = useState({ csv: "", sign: {} });
 
       const fetchTeamData = useCallback(async (teamName) => {
+        if (!teamName) return;
         setIsLoading(true);
         setScheduleData([]);
-        setNotice("");
-        setAllTeamSignData({});
-
+        setRawData({ csv: "", sign: {} });
+        
         try {
-          const exportUrl = SHEET_URLS[teamName] ? SHEET_URLS[teamName].replace(/\/edit.*gid=(\d+).*/, '/export?format=csv&gid=$1') : "";
+          const baseUrl = SHEET_URLS[teamName] || SHEET_URLS["1팀"];
+          const exportUrl = baseUrl.replace(/\/edit.*gid=(\d+).*/, '/export?format=csv&gid=$1');
           
-          // 1. CSV 데이터 가져오기
-          const csvPromise = fetch(`${exportUrl}&t=${Date.now()}`).then(r => r.text());
+          const csvRes = await fetch(`${exportUrl}&t=${Date.now()}`);
+          const csvText = await csvRes.text();
           
-          // 2. 취업팀인 경우 싸인 데이터 미리 가져오기
-          let signPromise = Promise.resolve({});
-          if (teamName?.includes('취업')) {
-            signPromise = fetch(`${GOOGLE_SCRIPT_URL}?action=getScheduleAll&team=${teamName}&teacher=__ALL__&t=${Date.now()}`)
-              .then(r => r.ok ? r.json() : {})
-              .catch(() => ({}));
+          let signData = {};
+          if (teamName.includes('취업')) {
+            try {
+              const sRes = await fetch(`${GOOGLE_SCRIPT_URL}?action=getScheduleAll&team=${teamName}&teacher=__ALL__&t=${Date.now()}`);
+              if (sRes.ok) signData = await sRes.json();
+            } catch (e) { console.warn("싸인 데이터 로드 실패(무시됨):", e); }
           }
-
-          const [csvText, signData] = await Promise.all([csvPromise, signPromise]);
-          setAllTeamSignData(signData);
-          setGlobalCsvText(csvText);
+          
+          setRawData({ csv: csvText, sign: signData });
         } catch (error) {
-          alert(`⚠️ [${teamName}] 데이터를 불러오는데 실패했습니다.\n에러: ` + error.message);
+          console.error("데이터 로드 에러:", error);
+          setNotice("⚠️ 데이터를 가져오지 못했습니다.");
           setIsLoading(false);
         }
       }, []);
@@ -3292,9 +3292,9 @@
       }, [selectedTeam, fetchTeamData]);
 
       useEffect(() => {
-        if (!globalCsvText || !window.Papa) return;
+        if (!rawData.csv || !window.Papa) return;
 
-        window.Papa.parse(globalCsvText, {
+        window.Papa.parse(rawData.csv, {
           header: false,
           skipEmptyLines: true,
           complete: function (results) {
@@ -3599,8 +3599,8 @@
                 if (selectedTeam?.includes('취업')) {
                   const dateKey = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth() + 1).padStart(2, '0')}-${String(currentDisplayDate.getDate()).padStart(2, '0')}`;
                   const shiftKey = currentTime.trim();
-                  if (allTeamSignData[dateKey] && allTeamSignData[dateKey][shiftKey]) {
-                    const jsonLoc = allTeamSignData[dateKey][shiftKey].location;
+                  if (rawData.sign[dateKey] && rawData.sign[dateKey][shiftKey]) {
+                    const jsonLoc = rawData.sign[dateKey][shiftKey].location;
                     if (jsonLoc && (jsonLoc.startsWith('http') || jsonLoc.startsWith('data:'))) {
                       currentLocation = jsonLoc;
                     }
@@ -3686,7 +3686,7 @@
             }
           }
         });
-      }, [globalCsvText, currentDisplayDate, selectedTeam, allTeamSignData]);
+      }, [rawData, currentDisplayDate, selectedTeam]);
 
       const handleDateChange = (daysToAdd) => {
         if (availableDates.length > 0) {
