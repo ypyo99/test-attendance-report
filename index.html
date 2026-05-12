@@ -3601,10 +3601,18 @@
                     const dKey = `${currentDisplayDate.getFullYear()}-${String(currentDisplayDate.getMonth() + 1).padStart(2, '0')}-${String(currentDisplayDate.getDate()).padStart(2, '0')}`;
                     const daySigns = rawData.sign[dKey] || {};
                     const cleanT = currentTime.replace(/\s+/g, '');
-                    let sEntry = daySigns[currentTime.trim()] || daySigns[cleanT];
+                    const teacherName = currentTeacher.trim();
+                    
+                    // 1. 강사명_시간 조합 키로 우선 검색 (가장 정확)
+                    // 2. 시간 키로 검색 (호환성 유지)
+                    let sEntry = daySigns[`${teacherName}_${currentTime.trim()}`] || 
+                                 daySigns[`${teacherName}_${cleanT}`] ||
+                                 daySigns[currentTime.trim()] || 
+                                 daySigns[cleanT];
                     
                     if (!sEntry && cleanT.includes('~')) {
-                      sEntry = daySigns[cleanT.split('~')[0] + '~'];
+                      const startTime = cleanT.split('~')[0] + '~';
+                      sEntry = daySigns[`${teacherName}_${startTime}`] || daySigns[startTime];
                     }
 
                     if (sEntry && sEntry.location && (sEntry.location.startsWith('http') || sEntry.location.startsWith('data:'))) {
