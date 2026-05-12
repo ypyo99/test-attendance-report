@@ -3287,7 +3287,7 @@
         window.Papa.parse(globalCsvText, {
           header: false,
           skipEmptyLines: true,
-          complete: function (results) {
+          complete: async function (results) {
             const data = results.data;
 
             if (data.length > 0 && data[0].length > 0 && typeof data[0][0] === 'string' && data[0][0].toLowerCase().includes("<html")) {
