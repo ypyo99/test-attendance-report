@@ -45,6 +45,82 @@ function doGet(e) {
     }
     return ContentService.createTextOutput(JSON.stringify({success: false})).setMimeType(ContentService.MimeType.JSON);
   }
+
+  // [추가] 싸인 데이터 전체 조회 액션
+  if (e.parameter.type === 'getAllSigns') {
+    var scheduleData = getTeacherScheduleAll(team, "__ALL__");
+    var formattedSigns = {};
+    
+    // 앱이 원하는 YYYY-MM-DD -> { "강사명_시간": {location: "..."} } 형식으로 변환
+    for (var dateKey in scheduleData) {
+      formattedSigns[dateKey] = {};
+      for (var timeKey in scheduleData[dateKey]) {
+        var item = scheduleData[dateKey][timeKey];
+        if (item.location) {
+          var teacherKey = "";
+          // getTeacherScheduleAll 결과에서 강사명을 찾기 위한 시트 재탐색 로직 대신 
+          // 현재 데이터 구조에서 유추하거나, 매칭을 위해 강사명을 키에 포함하도록 getTeacherScheduleAll을 활용
+          formattedSigns[dateKey][timeKey] = { location: item.location };
+          
+          // 강사별로 정확히 구분하기 위해 시트 구조를 다시 한번 파싱하여 "강사명_시간" 키 생성
+          // (getTeacherScheduleAll의 결과 구조를 활용)
+        }
+      }
+    }
+    
+    // 더 정확한 매칭을 위해 getTeacherScheduleAll의 결과를 그대로 가공하는 대신
+    // 전용 추출 함수를 사용하여 { date: { "강사_시간": {location: "..." } } } 형태로 반환
+    var finalSigns = getFormattedSignData(team);
+    return ContentService.createTextOutput(JSON.stringify(finalSigns)).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// 전용 싸인 데이터 추출 함수 추가
+function getFormattedSignData(team) {
+  var sheet = getSheetByTeamName(team);
+  if (!sheet) return {};
+  var range = sheet.getDataRange();
+  var data = range.getValues();
+  var formulas = range.getFormulas();
+  var dates = data[1];
+  var signMap = {};
+  
+  var currentTeacher = "";
+  for (var i = 2; i < data.length; i++) {
+    if (data[i][1] && data[i][1].toString().trim() !== "") {
+      currentTeacher = data[i][1].toString().trim();
+    }
+    var category = data[i][3] ? data[i][3].toString().trim() : "";
+    var shiftTime = data[i][2] ? data[i][2].toString().trim() : "";
+    
+    // '싸인' 행인 경우에만 처리
+    if (category === "싸인" && shiftTime !== "") {
+      for (var col = 4; col < dates.length; col++) {
+        var dateStr = formatDate(dates[col]);
+        if (!dateStr) continue;
+        
+        var formula = formulas[i][col];
+        var location = "";
+        
+        // IMAGE 수식 파싱
+        if (formula && formula.toUpperCase().indexOf("IMAGE") !== -1) {
+          var match = formula.match(/IMAGE\s*\(\s*["']([^"']+)["']/i);
+          if (match && match[1]) location = match[1];
+        } else if (data[i][col] && data[i][col].toString().startsWith('http')) {
+          location = data[i][col].toString().trim();
+        }
+        
+        if (location) {
+          if (!signMap[dateStr]) signMap[dateStr] = {};
+          // "강사명_시간" 복합 키 생성
+          signMap[dateStr][currentTeacher + "_" + shiftTime] = { location: location };
+          // 호환성을 위해 "시간" 단독 키도 추가
+          signMap[dateStr][shiftTime] = { location: location };
+        }
+      }
+    }
+  }
+  return signMap;
 }
 
 function getSheetByTeamName(teamNameFromWeb) {
