@@ -463,18 +463,20 @@
         setLastBase64("");
         setShowSavedImg(false);
         hasDrawnRef.current = false;
-        onSave("");
+        // ★ '지우기' 버튼을 눌러도 '저장'을 누르기 전까지는 부모 상태(onSave)를 건드리지 않음
       };
 
       const cancelSign = () => {
         setIsSigning(false);
         clearCanvasInternal();
-        setLastBase64("");
+        // ★ '나가기' 시에는 부모 상태를 업데이트하지 않고, 원래 전달받았던 currentUrl로 로컬 상태 복구
         if (currentUrl && (currentUrl.startsWith('http') || currentUrl.startsWith('data:'))) {
           setShowSavedImg(true);
           if (currentUrl.startsWith('data:')) setLastBase64(currentUrl);
+        } else {
+          setShowSavedImg(false);
+          setLastBase64("");
         }
-        onSave(currentUrl || "");
       };
 
       const handleImgLoad = () => {
