@@ -491,19 +491,19 @@
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
               싸인
             </span>
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <button
                 type="button"
                 onClick={toggleSignMode}
                 disabled={disabled}
-                className={`text-sm sm:text-[15px] font-black px-3 py-1.5 rounded-xl shadow-md transition-all active:scale-95 border disabled:opacity-50 disabled:cursor-not-allowed ${isSigning ? 'bg-green-500 hover:bg-green-600 text-white border-green-600 ring-4 ring-green-100' : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'}`}
+                className={`text-sm sm:text-[15px] font-black px-3 py-1.5 rounded-md shadow-md transition-all active:scale-95 border disabled:opacity-50 disabled:cursor-not-allowed ${isSigning ? 'bg-green-500 hover:bg-green-600 text-white border-green-600 ring-4 ring-green-100' : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'}`}
               >
                 {isSigning ? '저장' : '싸인하기'}
               </button>
               {isSigning && (
                 <>
-                  <button type="button" onClick={restartSign} disabled={disabled} className="text-sm sm:text-[15px] font-black text-red-600 hover:text-red-700 px-3 py-1.5 bg-white border-2 border-red-200 rounded-xl shadow-sm disabled:opacity-50 transition-all active:scale-95">지우기</button>
-                  <button type="button" onClick={cancelSign} className="text-sm sm:text-[15px] font-black text-gray-600 hover:text-gray-800 px-3 py-1.5 bg-white border-2 border-gray-200 rounded-xl shadow-sm transition-all active:scale-95">나가기</button>
+                  <button type="button" onClick={restartSign} disabled={disabled} className="text-sm sm:text-[15px] font-black text-red-600 hover:text-red-700 px-3 py-1.5 bg-white border-2 border-red-200 rounded-md shadow-sm disabled:opacity-50 transition-all active:scale-95">지우기</button>
+                  <button type="button" onClick={cancelSign} className="text-sm sm:text-[15px] font-black text-gray-600 hover:text-gray-800 px-3 py-1.5 bg-white border-2 border-gray-200 rounded-md shadow-sm transition-all active:scale-95">나가기</button>
                 </>
               )}
             </div>
