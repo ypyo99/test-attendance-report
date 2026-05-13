@@ -324,7 +324,7 @@
       );
     };
 
-    const SignaturePad = ({ onSave, disabled, currentUrl, onTriggerSave }) => {
+    const SignaturePad = ({ onSave, disabled, currentUrl, onTriggerSave, onRefresh }) => {
       const canvasRef = useRef(null);
       const [isDrawing, setIsDrawing] = useState(false);
       const [showSavedImg, setShowSavedImg] = useState(false);
@@ -475,6 +475,12 @@
       // ★ 원본 복구 전용 함수
       const restoreOriginal = (e) => {
         if (e) e.stopPropagation();
+        
+        // 부모로부터 전달받은 데이터 갱신 함수 호출 (시트 데이터 다시 읽기)
+        if (typeof onRefresh === 'function') {
+          onRefresh();
+        }
+
         setIsSigning(false);
         clearCanvasInternal();
         hasDrawnRef.current = false;
@@ -2321,6 +2327,7 @@
                                 <SignaturePad
                                   onSave={(base64) => handleLogChange(index, 'location', base64)}
                                   onTriggerSave={(base64) => performAutoSave(index, base64)}
+                                  onRefresh={() => setRefreshTrigger(prev => prev + 1)} // 데이터 새로고침 함수 전달
                                   disabled={isDataLoading || !logs[index]?.student?.trim()}
                                   currentUrl={logs[index]?.location}
                                 />
