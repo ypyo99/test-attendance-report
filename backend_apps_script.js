@@ -10,6 +10,8 @@ function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('🪄 시트 정리 작업')
     .addItem('색칠 + 테두리 긋기', 'runScheduleManagement')
+    .addSeparator()
+    .addItem('⚠️ 유실된 싸인 링크 복구하기', 'recoverDeletedSignatures')
     .addToUi();
 }
 
@@ -838,4 +840,89 @@ function autoBackupSheet_New() {
   } catch (e) {
     console.error("백업 중 오류 발생: " + e.toString());
   }
+}
+// =========================================================================
+// ★ [추가] 유실된 싸인 링크 자동 복구 프로그램
+// =========================================================================
+function recoverDeletedSignatures() {
+  var ui = SpreadsheetApp.getUi();
+  var team = "취업팀"; // 현재 취업팀 전용으로 작동
+  var sheet = getSheetByTeamName(team);
+  
+  if (!sheet) {
+    ui.alert("⚠️ '취업팀' 시트를 찾을 수 없습니다.");
+    return;
+  }
+
+  var folderName = "취업팀 수업 싸인";
+  var folderIter = DriveApp.getFoldersByName(folderName);
+  if (!folderIter.hasNext()) {
+    ui.alert("⚠️ '" + folderName + "' 폴더를 찾을 수 없습니다.");
+    return;
+  }
+  var folder = folderIter.next();
+  var files = folder.getFiles();
+  
+  var recoveryCount = 0;
+  var skipCount = 0;
+  
+  // 시트 데이터 전체 로드 (성능 최적화)
+  var range = sheet.getDataRange();
+  var data = range.getValues();
+  var dates = data[1];
+  
+  while (files.hasNext()) {
+    var file = files.next();
+    var fileName = file.getName();
+    
+    // 파일명 파싱 (형식: 2026-05-15_선생님_시간_학생명_타임스탬프.png)
+    var parts = fileName.split("_");
+    if (parts.length < 4) continue; // 형식이 맞지 않는 파일 스킵
+    
+    var fDate = parts[0];     // 날짜 (YYYY-MM-DD)
+    var fTeacher = parts[1];  // 선생님
+    var fShift = parts[2];    // 시간 (숫자만 남은 형태)
+    var fStudent = parts[3];  // 학생명
+    
+    var targetCol = -1;
+    for (var col = 4; col < dates.length; col++) {
+      if (formatDate(dates[col]) === fDate) {
+        targetCol = col + 1;
+        break;
+      }
+    }
+    
+    if (targetCol === -1) continue; // 해당 날짜를 시트에서 못 찾으면 패스
+    
+    var currentTeacher = "";
+    for (var i = 2; i < data.length; i++) {
+      if (data[i][1] && data[i][1].toString().trim() !== "") {
+        currentTeacher = data[i][1].toString().trim().replace(/[^가-힣a-zA-Z0-9]/g, "");
+      }
+      
+      if (currentTeacher === fTeacher) {
+        var rowShiftRaw = data[i][2] ? data[i][2].toString().trim() : "";
+        var rowShiftSafe = rowShiftRaw.replace(/[^0-9]/g, "");
+        
+        if (rowShiftSafe === fShift) {
+          var signatureCell = sheet.getRange(i + 2, targetCol); // 싸인 셀 (보통 학생명 바로 아래)
+          var currentVal = signatureCell.getValue();
+          
+          // 이미 값이 있으면 스킵 (중복 방지)
+          if (currentVal && (currentVal.toString().startsWith("http") || currentVal.toString().startsWith("=IMAGE"))) {
+            skipCount++;
+            continue;
+          }
+          
+          // 복구 실행
+          var imageUrl = "https://drive.google.com/uc?export=view&id=" + file.getId();
+          signatureCell.setValue(imageUrl);
+          recoveryCount++;
+          break;
+        }
+      }
+    }
+  }
+  
+  ui.alert("✅ 복구 작업 완료!\n- 복구된 링크: " + recoveryCount + "개\n- 기존 유지: " + skipCount + "개");
 }
