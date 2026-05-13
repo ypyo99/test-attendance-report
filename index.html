@@ -335,7 +335,8 @@
 
       useEffect(() => {
         // 그리는 중(isSigning)일 때는 저장된 이미지 레이어를 띄우지 않습니다.
-        if (!isSigning && currentUrl && (currentUrl.startsWith('http') || currentUrl.startsWith('data:'))) {
+        const hasUrl = currentUrl && (currentUrl.startsWith('http') || currentUrl.startsWith('data:') || currentUrl.startsWith('=') || currentUrl.includes('drive.google.com'));
+        if (!isSigning && hasUrl) {
           setShowSavedImg(true);
           if (currentUrl.startsWith('http')) {
             // 서버 URL로 바뀔 때, 이미 로딩된 적이 있는 URL이 아니라면 로딩 표시
@@ -470,9 +471,14 @@
         setIsSigning(false);
         clearCanvasInternal();
         // ★ '나가기' 시에는 부모 상태를 업데이트하지 않고, 원래 전달받았던 currentUrl로 로컬 상태 복구
-        if (currentUrl && (currentUrl.startsWith('http') || currentUrl.startsWith('data:'))) {
+        const hasUrl = currentUrl && (currentUrl.startsWith('http') || currentUrl.startsWith('data:') || currentUrl.startsWith('=') || currentUrl.includes('drive.google.com'));
+        if (hasUrl) {
           setShowSavedImg(true);
-          if (currentUrl.startsWith('data:')) setLastBase64(currentUrl);
+          if (!currentUrl.startsWith('data:')) {
+            setIsImgLoading(true);
+          } else {
+            setLastBase64(currentUrl);
+          }
         } else {
           setShowSavedImg(false);
           setLastBase64("");
