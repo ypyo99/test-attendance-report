@@ -498,12 +498,12 @@
                 disabled={disabled}
                 className={`text-sm sm:text-[15px] font-black px-3 py-1.5 rounded-xl shadow-md transition-all active:scale-95 border disabled:opacity-50 disabled:cursor-not-allowed ${isSigning ? 'bg-green-500 hover:bg-green-600 text-white border-green-600 ring-4 ring-green-100' : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'}`}
               >
-                {isSigning ? '완료' : '싸인하기'}
+                {isSigning ? '저장' : '싸인하기'}
               </button>
               {isSigning && (
                 <>
-                  <button type="button" onClick={restartSign} disabled={disabled} className="text-sm sm:text-[15px] font-black text-red-600 hover:text-red-700 px-3 py-1.5 bg-white border-2 border-red-200 rounded-xl shadow-sm disabled:opacity-50 transition-all active:scale-95">다시</button>
-                  <button type="button" onClick={cancelSign} className="text-sm sm:text-[15px] font-black text-gray-600 hover:text-gray-800 px-3 py-1.5 bg-white border-2 border-gray-200 rounded-xl shadow-sm transition-all active:scale-95">취소</button>
+                  <button type="button" onClick={restartSign} disabled={disabled} className="text-sm sm:text-[15px] font-black text-red-600 hover:text-red-700 px-3 py-1.5 bg-white border-2 border-red-200 rounded-xl shadow-sm disabled:opacity-50 transition-all active:scale-95">지우기</button>
+                  <button type="button" onClick={cancelSign} className="text-sm sm:text-[15px] font-black text-gray-600 hover:text-gray-800 px-3 py-1.5 bg-white border-2 border-gray-200 rounded-xl shadow-sm transition-all active:scale-95">나가기</button>
                 </>
               )}
             </div>
