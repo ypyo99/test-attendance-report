@@ -535,7 +535,7 @@ function handleSignatureUpload(p) {
           // 데이터 저장
           studentCell.setValue(p.student);
           if (imageUrl) {
-            signatureCell.setFormula('=IMAGE("' + imageUrl + '", 1)');
+            signatureCell.setValue(imageUrl);
           } else {
             signatureCell.setValue("");
           }
