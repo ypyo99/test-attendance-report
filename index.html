@@ -332,7 +332,6 @@
       const [lastBase64, setLastBase64] = useState("");
       const [isSigning, setIsSigning] = useState(false);
       const hasDrawnRef = useRef(false);
-      const [showModal, setShowModal] = useState(false);
 
       useEffect(() => {
         // 그리는 중(isSigning)일 때는 저장된 이미지 레이어를 띄우지 않습니다.
@@ -566,9 +565,7 @@
             {showSavedImg && displayImgUrl && (
               <div
                 key={`restore-${displayImgUrl}-${isSigning}`} // key를 추가하여 강제 리렌더링 유도
-                className="absolute inset-0 z-10 flex items-center justify-center bg-sky-100 border border-blue-300 rounded-xl shadow-inner overflow-hidden cursor-zoom-in"
-                onClick={() => setShowModal(true)}
-                title="클릭하면 크게 봅니다"
+                className="absolute inset-0 z-10 flex items-center justify-center bg-sky-100 border border-blue-300 rounded-xl shadow-inner overflow-hidden"
               >
                 {/* 1. 로딩 중일 때 보여줄 백그라운드 싸인 (끊김 방지) */}
                 {isImgLoading && lastBase64 && (
@@ -595,39 +592,9 @@
                   onLoad={handleImgLoad}
                   onError={() => setIsImgLoading(false)}
                 />
-
-                {!isSigning && !isImgLoading && (
-                  <div className="absolute bottom-2 right-2 bg-black/40 text-white p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
-                  </div>
-                )}
               </div>
             )}
           </div>
-
-          {showModal && displayImgUrl && (
-            <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-4 animate-fadeIn" onClick={() => setShowModal(false)}>
-              <div className="relative max-w-4xl w-full bg-white rounded-3xl p-2 shadow-2xl animate-scaleIn">
-                <button
-                  className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
-                  onClick={(e) => { e.stopPropagation(); setShowModal(false); }}
-                >
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-                <div className="bg-blue-50 rounded-2xl p-4 sm:p-8 flex items-center justify-center min-h-[300px]">
-                  <img
-                    src={displayImgUrl}
-                    alt="Enlarged Signature"
-                    className="max-h-[70vh] max-w-full object-contain shadow-sm"
-                  />
-                </div>
-                <div className="py-4 text-center">
-                  <p className="text-gray-800 font-black text-xl">수업 싸인 확대 보기</p>
-                  <p className="text-gray-500 font-bold">화면 아무 곳이나 누르면 닫힙니다.</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       );
     };
