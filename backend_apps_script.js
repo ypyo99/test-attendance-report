@@ -473,10 +473,12 @@ function handleSignatureUpload(p) {
     if (signatureData && signatureData.indexOf("data:image") === 0) {
       var base64Data = signatureData.split(",")[1];
       var studentSafeName = p.student ? p.student.replace(/[^가-힣a-zA-Z0-9]/g, "") : "이름없음";
+      var teacherSafeName = p.teacher ? p.teacher.replace(/[^가-힣a-zA-Z0-9]/g, "") : "선생님없음";
+      var shiftSafeName = p.shift ? p.shift.replace(/[^0-9]/g, "") : "시간없음";
       
-      // 파일명에 타임스탬프를 추가하여 구글 드라이브의 썸네일 캐시를 원천 차단합니다.
-      var filePrefix = studentSafeName + "-" + p.date;
-      var fileName = filePrefix + "-" + Date.now() + ".png";
+      // [개선] 날짜_선생님_시간_학생명 규칙으로 파일명 생성 (추후 복구용)
+      var filePrefix = p.date + "_" + teacherSafeName + "_" + shiftSafeName + "_" + studentSafeName;
+      var fileName = filePrefix + "_" + Date.now() + ".png";
       var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), "image/png", fileName);
 
       // 폴더 찾기/생성
@@ -488,7 +490,7 @@ function handleSignatureUpload(p) {
         folder = DriveApp.createFolder("취업팀 수업 싸인");
       }
 
-      // 기존 파일(같은 학생, 같은 날짜)이 있으면 모두 삭제 (파일명이 달라도 접두어로 찾음)
+      // 기존 파일(같은 날짜, 선생님, 시간, 학생)이 있으면 모두 삭제
       var existingFiles = folder.searchFiles("title contains '" + filePrefix + "' and trashed = false");
       while (existingFiles.hasNext()) {
         var f = existingFiles.next();
@@ -504,7 +506,10 @@ function handleSignatureUpload(p) {
       // 빈 값: 기존 드라이브 파일 삭제
       imageUrl = "";
       var studentSafeName = p.student ? p.student.replace(/[^가-힣a-zA-Z0-9]/g, "") : "이름없음";
-      var filePrefix = studentSafeName + "-" + p.date;
+      var teacherSafeName = p.teacher ? p.teacher.replace(/[^가-힣a-zA-Z0-9]/g, "") : "선생님없음";
+      var shiftSafeName = p.shift ? p.shift.replace(/[^0-9]/g, "") : "시간없음";
+      
+      var filePrefix = p.date + "_" + teacherSafeName + "_" + shiftSafeName + "_" + studentSafeName;
       var folderIter = DriveApp.getFoldersByName("취업팀 수업 싸인");
       if (folderIter.hasNext()) {
         var folder = folderIter.next();
