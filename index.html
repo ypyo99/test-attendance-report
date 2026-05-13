@@ -3981,9 +3981,9 @@
                                         <>
                                           {(() => {
                                             let displayTime = row.time;
-                                            const d = new Date(date);
-                                            const day = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
-                                            if (selectedTeam === '취업팀' && day === '금') {
+                                            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+                                            const dayStr = dayNames[currentDisplayDate.getDay()];
+                                            if (selectedTeam === '취업팀' && dayStr === '금') {
                                               const mapping = { "13:00~14:00": "9:30~10:30", "14:00~15:00": "10:30~11:30", "15:00~16:00": "11:30~12:30" };
                                               displayTime = mapping[row.time] || row.time;
                                             }
