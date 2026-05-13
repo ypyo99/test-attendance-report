@@ -468,20 +468,31 @@
         // ★ '지우기' 버튼을 눌러도 '저장'을 누르기 전까지는 부모 상태(onSave)를 건드리지 않음
       };
 
-      const cancelSign = () => {
+      // ★ 원본 복구 전용 함수
+      const restoreOriginal = (e) => {
+        if (e) e.stopPropagation();
         setIsSigning(false);
         clearCanvasInternal();
         hasDrawnRef.current = false;
-        // ★ '나가기' 시에는 즉시 원본 이미지를 보여줌 (로딩 스피너 생략하여 즉각성 확보)
+        
+        // 원본 URL 판별
         const hasUrl = currentUrl && (currentUrl.startsWith('http') || currentUrl.startsWith('data:') || currentUrl.startsWith('=') || currentUrl.includes('drive.google.com'));
         if (hasUrl) {
           setShowSavedImg(true);
-          setIsImgLoading(false); // 즉시 표시
-          if (currentUrl.startsWith('data:')) setLastBase64(currentUrl);
+          setIsImgLoading(false);
+          if (currentUrl.startsWith('data:')) {
+            setLastBase64(currentUrl);
+          } else {
+            setLastBase64(""); 
+          }
         } else {
           setShowSavedImg(false);
           setLastBase64("");
         }
+      };
+
+      const cancelSign = () => {
+        restoreOriginal();
       };
 
       const handleImgLoad = () => {
@@ -504,7 +515,7 @@
               {!isSigning && (
                 <button
                   type="button"
-                  onClick={cancelSign}
+                  onClick={restoreOriginal}
                   title="원본 싸인 불러오기"
                   className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors active:scale-90"
                 >
