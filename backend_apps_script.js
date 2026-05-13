@@ -47,9 +47,10 @@ function doGet(e) {
       return ContentService.createTextOutput(JSON.stringify({success: false})).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // [수정] action 또는 type 모두 대응 가능하도록 개선
-    if (action === 'getAllSigns' || e.parameter.type === 'getAllSigns') {
-      var finalSigns = getFormattedSignData(team);
+    // [수정] action 또는 type 모두 대응 가능하도록 개선, date 파라미터 추가
+    if (action === 'getAllSigns' || e.parameter.type === 'getAllSigns' || action === 'getSignsByDate') {
+      var targetDate = e.parameter.date; 
+      var finalSigns = getFormattedSignData(team, targetDate);
       return ContentService.createTextOutput(JSON.stringify(finalSigns)).setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -66,8 +67,8 @@ function doGet(e) {
   }
 }
 
-// 전용 싸인 데이터 추출 함수 추가
-function getFormattedSignData(team) {
+// 전용 싸인 데이터 추출 함수 추가 (targetDate가 있으면 해당 날짜만 추출)
+function getFormattedSignData(team, targetDate) {
   var sheet = getSheetByTeamName(team);
   if (!sheet) return {};
   var range = sheet.getDataRange();
@@ -89,6 +90,9 @@ function getFormattedSignData(team) {
       for (var col = 4; col < dates.length; col++) {
         var dateStr = formatDate(dates[col]);
         if (!dateStr) continue;
+        
+        // targetDate가 지정된 경우, 해당 날짜가 아니면 스킵
+        if (targetDate && dateStr !== targetDate) continue;
         
         var formula = formulas[i][col];
         var location = "";
