@@ -490,7 +490,9 @@
         clearCanvasInternal();
       };
 
-      const displayImgUrl = (currentUrl && currentUrl.startsWith('http')) ? getDirectImageUrl(currentUrl) : (currentUrl && currentUrl.startsWith('data:') ? currentUrl : lastBase64);
+      const displayImgUrl = (currentUrl && (currentUrl.startsWith('http') || currentUrl.startsWith('=') || currentUrl.includes('drive.google.com')))
+        ? getDirectImageUrl(currentUrl)
+        : (currentUrl && currentUrl.startsWith('data:') ? currentUrl : lastBase64);
 
       return (
         <div className="flex flex-col items-center border border-blue-300 p-3 bg-sky-50 rounded-2xl mt-3 shadow-sm">
